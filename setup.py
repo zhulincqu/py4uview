@@ -4,8 +4,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="py4uivew",
-    version="0.0.1",
+    name="py4uview",
+    version="0.0.2",
     author="Lin Zhu",
     author_email="lin.zhu@maxiv.lu.se",
     description="Data analysis package for MAXPEEM",
@@ -20,7 +20,6 @@ setuptools.setup(
         "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
         "Operating System :: OS Independent",
     ],
-    package_dir={"": "py4uview"},
-    packages=setuptools.find_packages(where="py4uivew"),
+    packages=["py4uview"],
     python_requires=">=3.9",
 )
