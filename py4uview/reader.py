@@ -1,5 +1,5 @@
 """
-Module contains tools for processing one Uview dat file into DataArray or other object.
+Module contains tools for processing one Uview dat file.
 """
 import logging
 import struct

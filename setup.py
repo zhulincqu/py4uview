@@ -1,0 +1,26 @@
+import setuptools
+
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+    name="py4uivew",
+    version="0.0.1",
+    author="Lin Zhu",
+    author_email="lin.zhu@maxiv.lu.se",
+    description="Data analysis package for MAXPEEM",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://gitlab.maxiv.lu.se/zhulin/py4uview",
+    project_urls={
+        "Bug Tracker": "https://gitlab.maxiv.lu.se/zhulin/py4uview/-/issues",
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+        "Operating System :: OS Independent",
+    ],
+    package_dir={"": "py4uview"},
+    packages=setuptools.find_packages(where="py4uivew"),
+    python_requires=">=3.9",
+)
