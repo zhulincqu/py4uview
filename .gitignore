@@ -1,4 +1,8 @@
 ### Python template
+# user defined
+testreadmarkup.py
+testfiles/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
