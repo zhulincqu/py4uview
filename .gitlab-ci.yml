@@ -10,7 +10,7 @@ stages:
   - test
   - publish
 
-run-pre-commit:
+.run-pre-commit:
   stage: check
   image: $PRE_COMMIT_IMAGE
   tags:
@@ -25,13 +25,12 @@ run-pre-commit:
       exists:
         - .pre-commit-config.yaml
 
-.build-pypi-package:
+build-pypi-package:
   stage: build
   tags:
     - kubernetes
   image: $PYPI_IMAGE
   script:
-    - clone_remoterepo_if_defined
     - pip install --upgrade pip
     - pip install --upgrade build
     - python -m build
