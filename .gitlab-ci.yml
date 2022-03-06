@@ -9,7 +9,7 @@ stages:
   - build
   - publish
 
-.run-pre-commit:
+run-pre-commit:
   stage: check
   image: $PRE_COMMIT_IMAGE
   tags:
