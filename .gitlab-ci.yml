@@ -1,57 +1,88 @@
-# This file is a template, and might need editing before it works on your project.
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/ee/development/cicd/templates.html
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
-
-# Official language image. Look for the different tagged releases at:
-# https://hub.docker.com/r/library/python/tags/
-image: python:latest
-
-# Change pip's cache directory to be inside the project directory since we can
-# only cache local items.
+---
 variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PRE_COMMIT_IMAGE: harbor.maxiv.lu.se/kits-sw/pre-commit:latest
+  PYPI_IMAGE: harbor.maxiv.lu.se/dockerhub/library/python:3
+  PYPI_ENABLED: "true"
 
-# Pip's cache doesn't store the python packages
-# https://pip.pypa.io/en/stable/reference/pip_install/#caching
-#
-# If you want to also cache the installed packages, you have to install
-# them in a virtualenv and cache it as well.
-cache:
-  paths:
-    - .cache/pip
-    - venv/
+stages:
+  - check
+  - build
+  - publish
 
-before_script:
-  - python --version  # For debugging
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-
-test:
+run-pre-commit:
+  stage: check
+  image: $PRE_COMMIT_IMAGE
+  tags:
+    - kubernetes
   script:
-    - python setup.py test
-    - pip install tox flake8  # you can also use tox
-    - tox -e py36,flake8
-
-run:
-  script:
-    - python setup.py bdist_wheel
-    # an alternative approach is to install and run:
-    - pip install dist/*
-    # run the command here
-  artifacts:
-    paths:
-      - dist/*.whl
-
-pages:
-  script:
-    - pip install sphinx sphinx-rtd-theme
-    - cd doc ; make html
-    - mv build/html/ ../public/
-  artifacts:
-    paths:
-      - public
+    - pre-commit run --all-files
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # Disable detached pipeline on MR
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH || $CI_COMMIT_TAG'
+      exists:
+        - .pre-commit-config.yaml
+
+build-pypi-package:
+  stage: build
+  tags:
+    - kubernetes
+  image: $PYPI_IMAGE
+  script:
+    - pip install --upgrade pip
+    - pip install --upgrade build
+    - python -m build
+    - |
+      if [[ ! -z "$CI_COMMIT_TAG" ]]; then
+        echo "Checking that the python version matches the git tag..."
+        pip install wheel-filename
+        version=$(python -c "import glob, wheel_filename; print(wheel_filename.parse_wheel_filename(glob.glob('dist/*.whl')[0]).version)")
+        if [[ "$version" != "$CI_COMMIT_TAG" ]]; then
+          echo "Invalid tag $CI_COMMIT_TAG! It should match the python package version $version"
+          exit 1
+        else
+          echo "OK!"
+        fi
+      fi
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - dist/
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+
+.publish-pypi-package:
+  stage: publish
+  tags:
+    - kubernetes
+  image: $PYPI_IMAGE
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - pip install twine
+  script:
+    - twine upload dist/*
+  rules:
+    # Disable detached pipeline on MR
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: never
+    - if: '$PYPI_ENABLED != "true"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: never
+    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_MESSAGE =~ /.*\[publish\].*/'
+      variables:
+        TWINE_REPOSITORY_URL: http://repo.maxiv.lu.se/devpi/maxiv/dev
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      # Make the job optional instead of blocking
+      allow_failure: true
+      variables:
+        TWINE_REPOSITORY_URL: http://repo.maxiv.lu.se/devpi/maxiv/dev
+    - if: '$CI_COMMIT_TAG'
+      variables:
+        TWINE_REPOSITORY_URL: http://repo.maxiv.lu.se/devpi/maxiv/prod
