@@ -50,8 +50,8 @@ build-pypi-package:
     paths:
       - dist/
   rules:
-    if: '$CI_COMMIT_BRANCH'
-    when: manual
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
 
 .publish-pypi-package:
   stage: publish
