@@ -46,10 +46,12 @@ build-pypi-package:
         fi
       fi
   artifacts:
-    expire_in: 1 week
+    expire_in: 1 day
     paths:
       - dist/
   rules:
+    - if: '$CI_COMMIT_TAG'
+      when: on_success
     - if: '$CI_COMMIT_BRANCH'
       when: manual
 
@@ -58,12 +60,13 @@ build-pypi-package:
   tags:
     - kubernetes
   image: $PYPI_IMAGE
-  variables:
-    GIT_STRATEGY: none
   before_script:
+    - python3 -m venv temp-env
+    - source temp-env/bin/activate
+    - pip install --upgrade pip
     - pip install twine
   script:
-    - twine upload dist/*
+    - twine upload --repository-url $TWINE_REPOSITORY_URL -u $PYPI_USER_NAME -p $PYPI_TOKEN --verbose dist/*
   rules:
     # Disable detached pipeline on MR
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
@@ -74,15 +77,13 @@ build-pypi-package:
       when: never
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: never
-    - if: '$CI_COMMIT_BRANCH && $CI_COMMIT_MESSAGE =~ /.*\[publish\].*/'
-      variables:
-        TWINE_REPOSITORY_URL: http://repo.maxiv.lu.se/devpi/maxiv/dev
     - if: '$CI_COMMIT_BRANCH'
       when: manual
-      # Make the job optional instead of blocking
-      allow_failure: true
-      variables:
-        TWINE_REPOSITORY_URL: http://repo.maxiv.lu.se/devpi/maxiv/dev
-    - if: '$CI_COMMIT_TAG'
-      variables:
-        TWINE_REPOSITORY_URL: http://repo.maxiv.lu.se/devpi/maxiv/prod
+
+test-publish:
+  environment: Development
+  extends: .publish-pypi-package
+
+publish-pypi:
+  environment: Production
+  extends: .publish-pypi-package
