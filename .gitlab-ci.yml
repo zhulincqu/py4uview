@@ -75,10 +75,11 @@ build-pypi-package:
       when: never
     - if: '$PYPI_ENABLED != "true"'
       when: never
-    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-      when: never
     - if: '$CI_COMMIT_BRANCH'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: manual
+
 
 test-publish:
   environment: Development
