@@ -1,8 +1,8 @@
-from py4uview.reader import (
+from .reader import (
     read_uv_dat,
     FileReader,
 )
-from py4uview.uview import (
+from .uview import (
     Uview,
 )
 
