@@ -69,16 +69,9 @@ build-pypi-package:
     - twine upload --repository-url $TWINE_REPOSITORY_URL -u $PYPI_USER_NAME -p $PYPI_TOKEN --verbose dist/*
   rules:
     # Disable detached pipeline on MR
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      when: never
-    - if: '$PYPI_ENABLED != "true"'
-      when: never
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
-      when: never
-    - if: '$CI_COMMIT_BRANCH'
       when: manual
+
 
 test-publish:
   environment: Development
